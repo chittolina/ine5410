@@ -100,7 +100,7 @@ static void _populate() {
     free(params);
 }
 
-static void compute_centroids(void) {
+void* compute_centroids(void* param) {
     int i, j, k;
     int population;
     has_changed = 0;
@@ -123,6 +123,27 @@ static void compute_centroids(void) {
         has_changed = 1;
     }
     memset(dirty, 0, ncentroids * sizeof(int));
+}
+
+static void _compute_centroids() {
+    has_changed = 0;
+    pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t)*nthreads);
+    struct param_thread *params = (struct param_thread *) malloc(sizeof(struct param_thread) * nthreads);
+
+    int i;
+    for (i = 0; i < nthreads; i++) {
+        params[i].tid = i;
+        params[i].start = i*npoints/nthreads;
+        params[i].end =(i+1)*npoints/nthreads;
+        pthread_create(&threads[i], NULL, populate, (void *) &params[i]);
+    }
+
+    for (i = 0; i < nthreads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    free(threads);
+    free(params);
 }
 
 int* kmeans(void) {
@@ -155,7 +176,7 @@ int* kmeans(void) {
 
     do { /* Cluster data. */
         _populate();
-        compute_centroids();
+        _compute_centroids();
     } while (too_far && has_changed);
 
     for (i = 0; i < ncentroids; i++)
