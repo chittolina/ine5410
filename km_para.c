@@ -54,6 +54,7 @@ float v_distance(vector_t a, vector_t b) {
     return sqrt(distance);
 }
 
+<<<<<<< HEAD
 static void _populate() {
     too_far = 0;
     pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t)*nthreads);
@@ -76,6 +77,9 @@ static void _populate() {
 }
 
 static void populate(void* param) {
+=======
+void* populate(void* param) {
+>>>>>>> populate
     struct param_thread *p = (struct param_thread *) param;
     int i, j;
     float tmp;
@@ -98,6 +102,27 @@ static void populate(void* param) {
         if (distance > mindistance)
             too_far = 1;
     }
+}
+
+static void _populate() {
+    too_far = 0;
+    pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t)*nthreads);
+    struct param_thread *params = (struct param_thread *) malloc(sizeof(struct param_thread) * nthreads);
+
+    int i;
+    for (i = 0; i < nthreads; i++) {
+        params[i].tid = i;
+        params[i].start = i*npoints/nthreads;
+        params[i].end =(i+1)*npoints/nthreads;
+        pthread_create(&threads[i], NULL, populate, (void *) &params[i]);
+    }
+
+    for (i = 0; i < nthreads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    free(threads);
+    free(params);
 }
 
 static void compute_centroids(void) {
