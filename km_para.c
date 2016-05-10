@@ -73,7 +73,6 @@ static void _populate() {
 
     free(threads);
     free(params);
-    pthread_exit (NULL);
 }
 
 static void populate(void* param) {
