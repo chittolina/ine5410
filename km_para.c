@@ -8,9 +8,10 @@
 #define RANDNUM_Z 362436069;
 
 struct param_thread {
-    int tid;
-    int start;
-    int end;
+    int startPoint;
+    int endPoint;
+    int startCentroid;
+    int endCentroid;
 };
 
 unsigned int randum_w = RANDNUM_W;
@@ -54,13 +55,14 @@ float v_distance(vector_t a, vector_t b) {
     return sqrt(distance);
 }
 
+
 void* populate(void* param) {
     struct param_thread *p = (struct param_thread *) param;
     int i, j;
     float tmp;
     float distance;
 
-    for (i = p->start; i < p->end; i++) {
+    for (i = p->startPoint; i < p->endPoint; i++) {
         distance = v_distance(centroids[map[i]], data[i]);
         /* Look for closest cluster. */
         for (j = 0; j < ncentroids; j++) {
@@ -81,14 +83,13 @@ void* populate(void* param) {
 
 static void _populate() {
     too_far = 0;
-    pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t)*nthreads);
-    struct param_thread *params = (struct param_thread *) malloc(sizeof(struct param_thread) * nthreads);
+    pthread_t *threads = malloc(sizeof(pthread_t)*nthreads);
+    struct param_thread *params = malloc(sizeof(struct param_thread) * nthreads);
 
     int i;
     for (i = 0; i < nthreads; i++) {
-        params[i].tid = i;
-        params[i].start = i*npoints/nthreads;
-        params[i].end =(i+1)*npoints/nthreads;
+        params[i].startPoint = i*npoints/nthreads;
+        params[i].endPoint =(i+1)*npoints/nthreads;
         pthread_create(&threads[i], NULL, populate, (void *) &params[i]);
     }
 
@@ -100,15 +101,43 @@ static void _populate() {
     free(params);
 }
 
+/*
+static void compute_centroids(void) {
+  int i, j, k;
+  int population;
+  has_changed = 0;
+  // Compute means. //
+  for (i = 0; i < ncentroids; i++) {
+    if (!dirty[i]) continue;
+    memset(centroids[i], 0, sizeof(float) * dimension);
+    // Compute cluster's mean. //
+    population = 0;
+    for (j = 0; j < npoints; j++) {
+      if (map[j] != i) continue;
+      for (k = 0; k < dimension; k++)
+        centroids[i][k] += data[j][k];
+      population++;
+    }
+    if (population > 1) {
+      for (k = 0; k < dimension; k++)
+        centroids[i][k] *= 1.0/population;
+    }
+    has_changed = 1;
+  }
+  memset(dirty, 0, ncentroids * sizeof(int));
+}
+*/
+
 void* compute_centroids(void* param) {
+    struct param_thread *p = (struct param_thread *) param;
     int i, j, k;
     int population;
-    has_changed = 0;
-    /* Compute means. */
-    for (i = 0; i < ncentroids; i++) {
+
+    // Compute means.
+    for (i = p->startCentroid; i < p->endCentroid; i++) {
         if (!dirty[i]) continue;
         memset(centroids[i], 0, sizeof(float) * dimension);
-        /* Compute cluster's mean. */
+        // Compute cluster's mean.
         population = 0;
         for (j = 0; j < npoints; j++) {
             if (map[j] != i) continue;
@@ -122,25 +151,26 @@ void* compute_centroids(void* param) {
         }
         has_changed = 1;
     }
-    memset(dirty, 0, ncentroids * sizeof(int));
 }
 
 static void _compute_centroids() {
     has_changed = 0;
-    pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t)*nthreads);
-    struct param_thread *params = (struct param_thread *) malloc(sizeof(struct param_thread) * nthreads);
+    pthread_t *threads = malloc(sizeof(pthread_t)*nthreads);
+    struct param_thread *params = malloc(sizeof(struct param_thread) * nthreads);
 
     int i;
     for (i = 0; i < nthreads; i++) {
-        params[i].tid = i;
-        params[i].start = i*npoints/nthreads;
-        params[i].end =(i+1)*npoints/nthreads;
-        pthread_create(&threads[i], NULL, populate, (void *) &params[i]);
+        params[i].startCentroid = i*ncentroids/nthreads;
+        params[i].endCentroid =(i+1)*ncentroids/nthreads;
+        pthread_create(&threads[i], NULL, compute_centroids, (void *) &params[i]);
     }
 
-    for (i = 0; i < nthreads; i++) {
-        pthread_join(threads[i], NULL);
+    int j;
+    for (j = 0; j < nthreads; j++) {
+        pthread_join(threads[j], NULL);
     }
+
+    memset(dirty, 0, ncentroids * sizeof(int));
 
     free(threads);
     free(params);
@@ -176,6 +206,7 @@ int* kmeans(void) {
 
     do { /* Cluster data. */
         _populate();
+        //_compute_centroids();
         _compute_centroids();
     } while (too_far && has_changed);
 
