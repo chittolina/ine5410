@@ -101,33 +101,6 @@ static void _populate() {
     free(params);
 }
 
-/*
-static void compute_centroids(void) {
-  int i, j, k;
-  int population;
-  has_changed = 0;
-  // Compute means. //
-  for (i = 0; i < ncentroids; i++) {
-    if (!dirty[i]) continue;
-    memset(centroids[i], 0, sizeof(float) * dimension);
-    // Compute cluster's mean. //
-    population = 0;
-    for (j = 0; j < npoints; j++) {
-      if (map[j] != i) continue;
-      for (k = 0; k < dimension; k++)
-        centroids[i][k] += data[j][k];
-      population++;
-    }
-    if (population > 1) {
-      for (k = 0; k < dimension; k++)
-        centroids[i][k] *= 1.0/population;
-    }
-    has_changed = 1;
-  }
-  memset(dirty, 0, ncentroids * sizeof(int));
-}
-*/
-
 void* compute_centroids(void* param) {
     struct param_thread *p = (struct param_thread *) param;
     int i, j, k;
