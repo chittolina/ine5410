@@ -56,6 +56,7 @@ float v_distance(vector_t a, vector_t b) {
 }
 
 
+/* Cada thread é responsável por executar o populate em determinadas faixas do vetor de pontos*/
 void* populate(void* param) {
     struct param_thread *p = (struct param_thread *) param;
     int i, j;
@@ -81,6 +82,7 @@ void* populate(void* param) {
     }
 }
 
+// Define a posição de início e de fim de cada thread.
 static void _populate() {
     too_far = 0;
     pthread_t *threads = malloc(sizeof(pthread_t)*nthreads);
@@ -101,6 +103,7 @@ static void _populate() {
     free(params);
 }
 
+/* Cada thread é responsável por executar o compute_centroids em uma determinada faixa no vetor de centroides */
 void* compute_centroids(void* param) {
     struct param_thread *p = (struct param_thread *) param;
     int i, j, k;
@@ -125,7 +128,7 @@ void* compute_centroids(void* param) {
         has_changed = 1;
     }
 }
-
+// Define a posição de início e fim de cada thread.
 static void _compute_centroids() {
     has_changed = 0;
     pthread_t *threads = malloc(sizeof(pthread_t)*nthreads);
@@ -138,9 +141,8 @@ static void _compute_centroids() {
         pthread_create(&threads[i], NULL, compute_centroids, (void *) &params[i]);
     }
 
-    int j;
-    for (j = 0; j < nthreads; j++) {
-        pthread_join(threads[j], NULL);
+    for (i = 0; i < nthreads; i++) {
+        pthread_join(threads[i], NULL);
     }
 
     memset(dirty, 0, ncentroids * sizeof(int));
