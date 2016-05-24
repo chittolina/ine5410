@@ -179,7 +179,6 @@ int* kmeans(void) {
 
     do { /* Cluster data. */
         _populate();
-        //_compute_centroids();
         _compute_centroids();
     } while (too_far && has_changed);
 
