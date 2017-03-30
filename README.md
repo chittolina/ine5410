@@ -1,2 +1,3 @@
 # ine5410
-k-means algorithm
+
+This repository contains a concurrent implementation of the 'K-means algorithm'.
